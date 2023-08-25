@@ -28,22 +28,9 @@ mcp = Adafruit_MCP3008.MCP3008(clk=CLK, cs=CS, miso=MISO, mosi=MOSI)
 def read_adc(channel):
     return mcp.read_adc(channel)
 
-PULSES_PER_REVOLUTION = 20  # Jumlah pulsa per putaran penuh
-MAX_RPM = 3000  # RPM maksimum yang ingin Anda ukur
-
 # Fungsi untuk menghitung RPM
 def calculate_rpm(pulses, time_elapsed):
-    return (pulses / PULSES_PER_REVOLUTION) / (time_elapsed / 60)
-
-def calibrate_encoder():
-    start_time = time.time()
-    start_pulses = read_adc(1)
-    end_pulses = read_adc(1)
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    calculated_rpm = calculate_rpm(end_pulses - start_pulses, elapsed_time)
-    calibration_factor = MAX_RPM / calculated_rpm
-    return calibration_factor
+    return (pulses / 20) / (time_elapsed / 60)
 
 def convert_to_liters(raw_value):
     # Implementasikan konversi berdasarkan kapasitas total tangki atau wadah Anda
@@ -133,7 +120,6 @@ def post_request(payload):
         print("[ERROR] Failed to send data:", e)
 
 try:
-    calibration_factor = calibrate_encoder()
     while True:
         # Baca data dari sensor water level (Channel 0)
         water_level_value = read_adc(0)
@@ -150,7 +136,7 @@ try:
         end_time = time.time()
         
         ir_speed_change = end_ir_speed - start_ir_speed
-        rpm = calculate_rpm(ir_speed_change, end_time - start_time) * calibration_factor
+        rpm = calculate_rpm(ir_speed_change, end_time - start_time)
         
         # Baca data dari GPS
         latitude, longitude = read_gps_coordinates()
