@@ -28,9 +28,11 @@ mcp = Adafruit_MCP3008.MCP3008(clk=CLK, cs=CS, miso=MISO, mosi=MOSI)
 def read_adc(channel):
     return mcp.read_adc(channel)
 
+PULSES_PER_REVOLUTION = 20  # Jumlah pulsa per putaran penuh
+
 # Fungsi untuk menghitung RPM
 def calculate_rpm(pulses, time_elapsed):
-    return (pulses / 20) / (time_elapsed / 60)
+    return (pulses / PULSES_PER_REVOLUTION) / (time_elapsed / 60)
 
 def convert_to_liters(raw_value):
     # Implementasikan konversi berdasarkan kapasitas total tangki atau wadah Anda
