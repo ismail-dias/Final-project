@@ -12,11 +12,6 @@ pin_relay = 18
 GPIO.setup(pin_relay, GPIO.OUT)
 GPIO.setwarnings(False)
 
-# def build_payload(relay):
-#     payload = {
-#         VARIABLE_LABEL_1:relay}
-#     return payload
-
 try:
     while True:
         url = "http://industrial.api.ubidots.com"
