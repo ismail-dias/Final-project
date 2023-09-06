@@ -9,7 +9,6 @@ import pynmea2
 import math
 
 
-# Konfigurasi Ubidots
 UBIDOTS_TOKEN = "BBFF-03MEmiXujs99bPymSwqiVXcNo5t545"
 DEVICE_LABEL = "raspberry-pi" 
 VARIABLE_LABEL_1 = "water-level-device"
@@ -17,36 +16,26 @@ VARIABLE_LABEL_2 = "encoder-device"
 VARIABLE_LABEL_3 = "position-device"
 VARIABLE_LABEL_4 = "speed-device"
 
-# Konfigurasi MCP3008
 CLK = 11
 MISO = 9
 MOSI = 10
 CS = 8
 mcp = Adafruit_MCP3008.MCP3008(clk=CLK, cs=CS, miso=MISO, mosi=MOSI)
 
-# Fungsi untuk membaca data dari MCP3008
 def read_adc(channel):
     return mcp.read_adc(channel)
 
-PULSES_PER_REVOLUTION = 20  # Jumlah pulsa per putaran penuh
+PULSES_PER_REVOLUTION = 20
 
-# Fungsi untuk menghitung RPM
 def calculate_rpm(pulses, time_elapsed):
     return (pulses / PULSES_PER_REVOLUTION) / (time_elapsed / 60)
 
 def convert_to_liters(raw_value):
-    # Implementasikan konversi berdasarkan kapasitas total tangki atau wadah Anda
-    # Misalnya, jika Anda memiliki kapasitas total 1000 liter, Anda bisa menggunakan rumus:
-    # liters = (raw_value / max_raw_value) * total_capacity
-    # Di sini max_raw_value adalah nilai maksimal dari sensor dan total_capacity adalah kapasitas total dalam liter.
-    
-    max_raw_value = 1023  # Nilai maksimal dari sensor
-    total_capacity = 30  # Kapasitas total tangki dalam liter  
-    
+    max_raw_value = 1023
+    total_capacity = 30
     liters = (raw_value / max_raw_value) * total_capacity
     return liters   
 
-# GPS serial port configuration
 SERIAL_PORT = "/dev/ttyS0"
 BAUDRATE = 9600
 
@@ -80,7 +69,7 @@ def calculate_speed(curr_latitude, curr_longitude, curr_time):
     time_diff = (curr_time - prev_time)
     distance = haversine(prev_latitude, prev_longitude, curr_latitude, curr_longitude)
 
-    speed = distance / time_diff  # Speed in meters per second
+    speed = distance / time_diff
 
     prev_latitude = curr_latitude
     prev_longitude = curr_longitude
@@ -89,7 +78,7 @@ def calculate_speed(curr_latitude, curr_longitude, curr_time):
     return speed
 
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371000  # Radius of the Earth in meters
+    R = 6371000
     phi_1 = math.radians(lat1)
     phi_2 = math.radians(lat2)
     delta_phi = math.radians(lat2 - lat1)
@@ -109,7 +98,7 @@ def build_payload(water_level_convert_to_liter, rpm, latitude, longitude, speed)
         VARIABLE_LABEL_4: speed}
     return payload
 
-# Fungsi untuk mengirim data ke Ubidots
+
 def post_request(payload):
     url = "http://industrial.api.ubidots.com"
     url = "{}/api/v1.6/devices/{}".format(url, DEVICE_LABEL)
@@ -123,14 +112,11 @@ def post_request(payload):
 
 try:
     while True:
-        # Baca data dari sensor water level (Channel 0)
         water_level_value = read_adc(0)
         water_level_convert_to_liter = convert_to_liters(water_level_value)
 
-        # Baca data dari sensor IR speed (Channel 1)
         ir_speed_value = read_adc(1)
-        
-        # Hitung RPM dari data IR speed (asumsi ada disk encoder dengan 20 lubang)
+
         start_time = time.time()
         start_ir_speed = ir_speed_value
         time.sleep(1)
@@ -140,7 +126,6 @@ try:
         ir_speed_change = end_ir_speed - start_ir_speed
         rpm = calculate_rpm(ir_speed_change, end_time - start_time)
         
-        # Baca data dari GPS
         latitude, longitude = read_gps_coordinates()
         if latitude is not None and longitude is not None:
             curr_time = time.time()
@@ -148,7 +133,6 @@ try:
         else:
             speed = None
         
-        # Kirim data ke Ubidots
         payload = build_payload(water_level_convert_to_liter, rpm, latitude, longitude, speed)
         post_request(payload)
         time.sleep(1)
